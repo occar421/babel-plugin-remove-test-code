@@ -5,5 +5,7 @@
     "skipLibCheck": true,
     "target": "es2016",
     "outDir": "./dist"
-  }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "**/__tests__/*.ts"]
 }

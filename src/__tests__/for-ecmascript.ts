@@ -1,6 +1,6 @@
 import prettier from "prettier";
 import * as babel from "@babel/core";
-import removeTestCodePlugin from "./index";
+import removeTestCodePlugin from "../index";
 
 type Language = "ecmascript";
 
@@ -53,13 +53,43 @@ ${normalizedActualCode}`;
   });
 });
 
-describe("babel-plugin-remove-test-code", () => {
-  describe("for ecmascript", () => {
-    it("transforms nothing if test code does not exists", () => {
-      expect(`console.log("a");`).willTransformLike(
-        "ecmascript",
-        `console.log("a");`
-      );
-    });
+describe("babel-plugin-remove-test-code for ecmascript", () => {
+  it("transforms nothing if test code does not exists", () => {
+    expect(`console.log("a");`).willTransformLike(
+      "ecmascript",
+      `console.log("a");`
+    );
+  });
+
+  it("removes global `describe` invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+describe("b", () => {
+  it("c", () => {
+    expect("d").not.toBe("e");
+  });
+});`).willTransformLike(
+      "ecmascript",
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `test` invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+test("b", () => {
+  it("c", () => {
+    expect("d").not.toBe("e");
+  });
+});`).willTransformLike(
+      "ecmascript",
+      `
+console.log("a");
+`
+    );
   });
 });
