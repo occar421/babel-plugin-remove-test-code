@@ -1,0 +1,15 @@
+{
+  "name": "babel-plugin-remove-test-code",
+  "version": "0.1.0",
+  "description": "Babel Plugin which removes test code",
+  "main": "dist/index.js",
+  "repository": "https://github.com/occar421/babel-plugin-remove-test-code.git",
+  "author": "MasuqaT <occar@hotmail.co.jp>",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^3.3.3333"
+  }
+}
