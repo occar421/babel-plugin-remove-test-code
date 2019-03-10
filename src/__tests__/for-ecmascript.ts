@@ -78,4 +78,56 @@ console.log("a");
 `
     );
   });
+
+  it("removes global `afterAll` invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+afterAll(() => {
+  console.log("b");
+});`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `afterEach` invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+afterEach(() => {
+  console.log("b");
+});`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `beforeAll` invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+beforeAll(() => {
+  console.log("b");
+});`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `beforeEach` invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+beforeEach(() => {
+  console.log("b");
+});`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
 });

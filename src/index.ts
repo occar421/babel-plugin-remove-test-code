@@ -20,10 +20,18 @@ export default function(context: typeof babel): babel.PluginObj {
 
         // Jest
         // https://jestjs.io/docs/en/api
-        // TODO: before/after-All/Each
         // TODO: functions like `describe.only`
         // TODO: when `describe` variable exists
-        if (["describe", "test"].includes(expression.callee.name)) {
+        if (
+          [
+            "afterAll",
+            "afterEach",
+            "beforeAll",
+            "beforeEach",
+            "describe",
+            "test"
+          ].includes(expression.callee.name)
+        ) {
           path.remove();
         }
       }
