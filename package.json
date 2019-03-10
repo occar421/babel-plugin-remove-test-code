@@ -8,14 +8,19 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "style": "eslint src/**"
+    "style": "eslint src/**",
+    "test": "jest"
   },
   "devDependencies": {
+    "@babel/core": "^7.3.4",
+    "@types/jest": "^24.0.11",
     "@typescript-eslint/eslint-plugin": "^1.4.2",
     "eslint": "^5.15.1",
     "eslint-config-prettier": "^4.1.0",
     "eslint-plugin-prettier": "^3.0.1",
+    "jest": "^24.3.1",
     "prettier": "^1.16.4",
+    "ts-jest": "^24.0.0",
     "typescript": "^3.3.3333"
   }
 }
