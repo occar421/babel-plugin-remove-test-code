@@ -50,11 +50,25 @@ describe("babel-plugin-remove-test-code for ecmascript", () => {
   });
 
   describe("Jest", () => {
-    it("removes global `describe` invocation", () => {
+    it.each([
+      "describe",
+      "test",
+      "it",
+      "afterAll",
+      "afterEach",
+      "beforeAll",
+      "beforeEach",
+      "describe.only",
+      "describe.skip",
+      "test.only",
+      "test.skip",
+      "it.only",
+      "it.skip"
+    ])("removes global `%s` invocation", funcName => {
       expect(`
 console.log("a");
 
-describe("b", () => {
+${funcName}("b", () => {
   it("c", () => {
     expect("d").not.toBe("e");
   });
@@ -65,78 +79,21 @@ console.log("a");
       );
     });
 
-    it("removes global `test` invocation", () => {
+    it.each([
+      "describe.each",
+      "describe.only.each",
+      "describe.skip.each",
+      "test.each",
+      "test.only.each",
+      "test.skip.each",
+      "it.each",
+      "it.only.each",
+      "it.skip.each"
+    ])("removes global `%s` invocation", funcName => {
       expect(`
 console.log("a");
 
-test("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `afterAll` invocation", () => {
-      expect(`
-console.log("a");
-
-afterAll(() => {
-  console.log("b");
-});`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `afterEach` invocation", () => {
-      expect(`
-console.log("a");
-
-afterEach(() => {
-  console.log("b");
-});`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `beforeAll` invocation", () => {
-      expect(`
-console.log("a");
-
-beforeAll(() => {
-  console.log("b");
-});`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `beforeEach` invocation", () => {
-      expect(`
-console.log("a");
-
-beforeEach(() => {
-  console.log("b");
-});`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `describe.each` invocation", () => {
-      expect(`
-console.log("a");
-
-describe.each([["a", "b"], ["c", "d"]])(
+${funcName}([["a", "b"], ["c", "d"]])(
   "%p and %p are different",
   (arg, expected) => {
     it(\`\${arg} !== \${expected}\`, () => {
@@ -150,11 +107,23 @@ console.log("a");
       );
     });
 
-    it("removes global `describe.each` with tagged template liberal invocation", () => {
-      expect(`
+    it.each([
+      "describe.each",
+      "describe.only.each",
+      "describe.skip.each",
+      "test.each",
+      "test.only.each",
+      "test.skip.each",
+      "it.each",
+      "it.only.each",
+      "it.skip.each"
+    ])(
+      "removes global `%s` invocation with tagged template literal",
+      funcName => {
+        expect(`
 console.log("a");
 
-describe.each\`
+${funcName}\`
   arg    | expected
   \${"a"} | \${"b"}
   \${"c"} | \${"d"}
@@ -163,266 +132,11 @@ describe.each\`
     expect(arg).not.toBe(expected);
   });
 });`).willTransformLike(
-        `
+          `
 console.log("a");
 `
-      );
-    });
-
-    it("removes global `describe.only` invocation", () => {
-      expect(`
-console.log("a");
-
-describe.only("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `describe.only.each` invocation", () => {
-      expect(`
-console.log("a");
-
-describe.only.each([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `describe.only.each` with tagged template liberal invocation", () => {
-      expect(`
-console.log("a");
-
-describe.only.each\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `describe.skip` invocation", () => {
-      expect(`
-console.log("a");
-
-describe.skip("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `describe.skip.each` invocation", () => {
-      expect(`
-console.log("a");
-
-describe.skip.each([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `describe.skip.each` with tagged template liberal invocation", () => {
-      expect(`
-console.log("a");
-
-describe.skip.each\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `test.each` invocation", () => {
-      expect(`
-console.log("a");
-
-test.each([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `test.each` with tagged template liberal invocation", () => {
-      expect(`
-console.log("a");
-
-test.each\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `test.only` invocation", () => {
-      expect(`
-console.log("a");
-
-test.only("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `test.only.each` invocation", () => {
-      expect(`
-console.log("a");
-
-test.only.each([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `test.only.each` with tagged template liberal invocation", () => {
-      expect(`
-console.log("a");
-
-test.only.each\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `test.skip` invocation", () => {
-      expect(`
-console.log("a");
-
-test.skip("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `test.skip.each` invocation", () => {
-      expect(`
-console.log("a");
-
-test.skip.each([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `test.skip.each` with tagged template liberal invocation", () => {
-      expect(`
-console.log("a");
-
-test.skip.each\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
-
-    it("removes global `test.todo` invocation", () => {
-      expect(`
-console.log("a");
-
-test.todo("b")`).willTransformLike(
-        `
-console.log("a");
-`
-      );
-    });
+        );
+      }
+    );
   });
 });
