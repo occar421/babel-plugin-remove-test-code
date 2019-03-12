@@ -49,8 +49,9 @@ describe("babel-plugin-remove-test-code for ecmascript", () => {
     expect(`console.log("a");`).willTransformLike(`console.log("a");`);
   });
 
-  it("removes global `describe` invocation in the file root", () => {
-    expect(`
+  describe("Jest", () => {
+    it("removes global `describe` invocation", () => {
+      expect(`
 console.log("a");
 
 describe("b", () => {
@@ -58,14 +59,14 @@ describe("b", () => {
     expect("d").not.toBe("e");
   });
 });`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `test` invocation in the file root", () => {
-    expect(`
+    it("removes global `test` invocation", () => {
+      expect(`
 console.log("a");
 
 test("b", () => {
@@ -73,66 +74,66 @@ test("b", () => {
     expect("d").not.toBe("e");
   });
 });`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `afterAll` invocation in the file root", () => {
-    expect(`
+    it("removes global `afterAll` invocation", () => {
+      expect(`
 console.log("a");
 
 afterAll(() => {
   console.log("b");
 });`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `afterEach` invocation in the file root", () => {
-    expect(`
+    it("removes global `afterEach` invocation", () => {
+      expect(`
 console.log("a");
 
 afterEach(() => {
   console.log("b");
 });`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `beforeAll` invocation in the file root", () => {
-    expect(`
+    it("removes global `beforeAll` invocation", () => {
+      expect(`
 console.log("a");
 
 beforeAll(() => {
   console.log("b");
 });`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `beforeEach` invocation in the file root", () => {
-    expect(`
+    it("removes global `beforeEach` invocation", () => {
+      expect(`
 console.log("a");
 
 beforeEach(() => {
   console.log("b");
 });`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `describe.each` invocation in the file root", () => {
-    expect(`
+    it("removes global `describe.each` invocation", () => {
+      expect(`
 console.log("a");
 
 describe.each([["a", "b"], ["c", "d"]])(
@@ -143,14 +144,14 @@ describe.each([["a", "b"], ["c", "d"]])(
     });
   }
 );`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `describe.each` with tagged template liberal invocation in the file root", () => {
-    expect(`
+    it("removes global `describe.each` with tagged template liberal invocation", () => {
+      expect(`
 console.log("a");
 
 describe.each\`
@@ -162,14 +163,14 @@ describe.each\`
     expect(arg).not.toBe(expected);
   });
 });`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `describe.only` invocation in the file root", () => {
-    expect(`
+    it("removes global `describe.only` invocation", () => {
+      expect(`
 console.log("a");
 
 describe.only("b", () => {
@@ -177,14 +178,14 @@ describe.only("b", () => {
     expect("d").not.toBe("e");
   });
 });`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `describe.only.each` invocation in the file root", () => {
-    expect(`
+    it("removes global `describe.only.each` invocation", () => {
+      expect(`
 console.log("a");
 
 describe.only.each([["a", "b"], ["c", "d"]])(
@@ -195,14 +196,14 @@ describe.only.each([["a", "b"], ["c", "d"]])(
     });
   }
 );`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `describe.only.each` with tagged template liberal invocation in the file root", () => {
-    expect(`
+    it("removes global `describe.only.each` with tagged template liberal invocation", () => {
+      expect(`
 console.log("a");
 
 describe.only.each\`
@@ -214,14 +215,14 @@ describe.only.each\`
     expect(arg).not.toBe(expected);
   });
 });`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `describe.skip` invocation in the file root", () => {
-    expect(`
+    it("removes global `describe.skip` invocation", () => {
+      expect(`
 console.log("a");
 
 describe.skip("b", () => {
@@ -229,14 +230,14 @@ describe.skip("b", () => {
     expect("d").not.toBe("e");
   });
 });`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `describe.skip.each` invocation in the file root", () => {
-    expect(`
+    it("removes global `describe.skip.each` invocation", () => {
+      expect(`
 console.log("a");
 
 describe.skip.each([["a", "b"], ["c", "d"]])(
@@ -247,14 +248,14 @@ describe.skip.each([["a", "b"], ["c", "d"]])(
     });
   }
 );`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `describe.skip.each` with tagged template liberal invocation in the file root", () => {
-    expect(`
+    it("removes global `describe.skip.each` with tagged template liberal invocation", () => {
+      expect(`
 console.log("a");
 
 describe.skip.each\`
@@ -266,14 +267,14 @@ describe.skip.each\`
     expect(arg).not.toBe(expected);
   });
 });`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `test.each` invocation in the file root", () => {
-    expect(`
+    it("removes global `test.each` invocation", () => {
+      expect(`
 console.log("a");
 
 test.each([["a", "b"], ["c", "d"]])(
@@ -284,14 +285,14 @@ test.each([["a", "b"], ["c", "d"]])(
     });
   }
 );`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `test.each` with tagged template liberal invocation in the file root", () => {
-    expect(`
+    it("removes global `test.each` with tagged template liberal invocation", () => {
+      expect(`
 console.log("a");
 
 test.each\`
@@ -303,14 +304,14 @@ test.each\`
     expect(arg).not.toBe(expected);
   });
 });`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `test.only` invocation in the file root", () => {
-    expect(`
+    it("removes global `test.only` invocation", () => {
+      expect(`
 console.log("a");
 
 test.only("b", () => {
@@ -318,14 +319,14 @@ test.only("b", () => {
     expect("d").not.toBe("e");
   });
 });`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `test.only.each` invocation in the file root", () => {
-    expect(`
+    it("removes global `test.only.each` invocation", () => {
+      expect(`
 console.log("a");
 
 test.only.each([["a", "b"], ["c", "d"]])(
@@ -336,14 +337,14 @@ test.only.each([["a", "b"], ["c", "d"]])(
     });
   }
 );`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `test.only.each` with tagged template liberal invocation in the file root", () => {
-    expect(`
+    it("removes global `test.only.each` with tagged template liberal invocation", () => {
+      expect(`
 console.log("a");
 
 test.only.each\`
@@ -355,14 +356,14 @@ test.only.each\`
     expect(arg).not.toBe(expected);
   });
 });`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `test.skip` invocation in the file root", () => {
-    expect(`
+    it("removes global `test.skip` invocation", () => {
+      expect(`
 console.log("a");
 
 test.skip("b", () => {
@@ -370,14 +371,14 @@ test.skip("b", () => {
     expect("d").not.toBe("e");
   });
 });`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `test.skip.each` invocation in the file root", () => {
-    expect(`
+    it("removes global `test.skip.each` invocation", () => {
+      expect(`
 console.log("a");
 
 test.skip.each([["a", "b"], ["c", "d"]])(
@@ -388,14 +389,14 @@ test.skip.each([["a", "b"], ["c", "d"]])(
     });
   }
 );`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `test.skip.each` with tagged template liberal invocation in the file root", () => {
-    expect(`
+    it("removes global `test.skip.each` with tagged template liberal invocation", () => {
+      expect(`
 console.log("a");
 
 test.skip.each\`
@@ -407,20 +408,21 @@ test.skip.each\`
     expect(arg).not.toBe(expected);
   });
 });`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
-  });
+      );
+    });
 
-  it("removes global `test.todo` invocation in the file root", () => {
-    expect(`
+    it("removes global `test.todo` invocation", () => {
+      expect(`
 console.log("a");
 
 test.todo("b")`).willTransformLike(
-      `
+        `
 console.log("a");
 `
-    );
+      );
+    });
   });
 });
