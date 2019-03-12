@@ -130,4 +130,297 @@ console.log("a");
 `
     );
   });
+
+  it("removes global `describe.each` invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+describe.each([["a", "b"], ["c", "d"]])(
+  "%p and %p are different",
+  (arg, expected) => {
+    it(\`\${arg} !== \${expected}\`, () => {
+      expect(arg).not.toBe(expected);
+    });
+  }
+);`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `describe.each` with tagged template liberal invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+describe.each\`
+  arg    | expected
+  \${"a"} | \${"b"}
+  \${"c"} | \${"d"}
+\`("$arg and $expected are different", ({ arg, expected }) => {
+  it(\`\${arg} !== \${expected}\`, () => {
+    expect(arg).not.toBe(expected);
+  });
+});`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `describe.only` invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+describe.only("b", () => {
+  it("c", () => {
+    expect("d").not.toBe("e");
+  });
+});`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `describe.only.each` invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+describe.only.each([["a", "b"], ["c", "d"]])(
+  "%p and %p are different",
+  (arg, expected) => {
+    it(\`\${arg} !== \${expected}\`, () => {
+      expect(arg).not.toBe(expected);
+    });
+  }
+);`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `describe.only.each` with tagged template liberal invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+describe.only.each\`
+  arg    | expected
+  \${"a"} | \${"b"}
+  \${"c"} | \${"d"}
+\`("$arg and $expected are different", ({ arg, expected }) => {
+  it(\`\${arg} !== \${expected}\`, () => {
+    expect(arg).not.toBe(expected);
+  });
+});`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `describe.skip` invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+describe.skip("b", () => {
+  it("c", () => {
+    expect("d").not.toBe("e");
+  });
+});`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `describe.skip.each` invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+describe.skip.each([["a", "b"], ["c", "d"]])(
+  "%p and %p are different",
+  (arg, expected) => {
+    it(\`\${arg} !== \${expected}\`, () => {
+      expect(arg).not.toBe(expected);
+    });
+  }
+);`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `describe.skip.each` with tagged template liberal invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+describe.skip.each\`
+  arg    | expected
+  \${"a"} | \${"b"}
+  \${"c"} | \${"d"}
+\`("$arg and $expected are different", ({ arg, expected }) => {
+  it(\`\${arg} !== \${expected}\`, () => {
+    expect(arg).not.toBe(expected);
+  });
+});`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `test.each` invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+test.each([["a", "b"], ["c", "d"]])(
+  "%p and %p are different",
+  (arg, expected) => {
+    it(\`\${arg} !== \${expected}\`, () => {
+      expect(arg).not.toBe(expected);
+    });
+  }
+);`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `test.each` with tagged template liberal invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+test.each\`
+  arg    | expected
+  \${"a"} | \${"b"}
+  \${"c"} | \${"d"}
+\`("$arg and $expected are different", ({ arg, expected }) => {
+  it(\`\${arg} !== \${expected}\`, () => {
+    expect(arg).not.toBe(expected);
+  });
+});`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `test.only` invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+test.only("b", () => {
+  it("c", () => {
+    expect("d").not.toBe("e");
+  });
+});`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `test.only.each` invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+test.only.each([["a", "b"], ["c", "d"]])(
+  "%p and %p are different",
+  (arg, expected) => {
+    it(\`\${arg} !== \${expected}\`, () => {
+      expect(arg).not.toBe(expected);
+    });
+  }
+);`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `test.only.each` with tagged template liberal invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+test.only.each\`
+  arg    | expected
+  \${"a"} | \${"b"}
+  \${"c"} | \${"d"}
+\`("$arg and $expected are different", ({ arg, expected }) => {
+  it(\`\${arg} !== \${expected}\`, () => {
+    expect(arg).not.toBe(expected);
+  });
+});`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `test.skip` invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+test.skip("b", () => {
+  it("c", () => {
+    expect("d").not.toBe("e");
+  });
+});`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `test.skip.each` invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+test.skip.each([["a", "b"], ["c", "d"]])(
+  "%p and %p are different",
+  (arg, expected) => {
+    it(\`\${arg} !== \${expected}\`, () => {
+      expect(arg).not.toBe(expected);
+    });
+  }
+);`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `test.skip.each` with tagged template liberal invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+test.skip.each\`
+  arg    | expected
+  \${"a"} | \${"b"}
+  \${"c"} | \${"d"}
+\`("$arg and $expected are different", ({ arg, expected }) => {
+  it(\`\${arg} !== \${expected}\`, () => {
+    expect(arg).not.toBe(expected);
+  });
+});`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
+
+  it("removes global `test.todo` invocation in the file root", () => {
+    expect(`
+console.log("a");
+
+test.todo("b")`).willTransformLike(
+      `
+console.log("a");
+`
+    );
+  });
 });
