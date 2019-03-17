@@ -157,7 +157,7 @@ export default function(context: typeof babel): babel.PluginObj {
         }
 
         // finding user's declaration
-        const declaredNames: string[] = collectDeclaredNamesShallow(
+        const globalVariableNames: string[] = collectDeclaredNamesShallow(
           t,
           globalPaths
         );
@@ -172,7 +172,7 @@ export default function(context: typeof babel): babel.PluginObj {
               t.isCallExpression(expression) &&
               t.isIdentifier(expression.callee)
             ) {
-              const globalVariableName = expression.callee.name;
+              const variableNameToCall = expression.callee.name;
               if (
                 [
                   "afterAll",
@@ -183,8 +183,8 @@ export default function(context: typeof babel): babel.PluginObj {
                   "test",
                   "it"
                 ]
-                  .difference(declaredNames)
-                  .includes(globalVariableName)
+                  .difference(globalVariableNames)
+                  .includes(variableNameToCall)
               ) {
                 path.remove();
                 continue;
@@ -201,27 +201,36 @@ export default function(context: typeof babel): babel.PluginObj {
                 t.isIdentifier(methodExpression.object) &&
                 t.isIdentifier(methodExpression.property)
               ) {
-                const nameTokens = [
+                const variableNameTokensToCall = [
                   methodExpression.object.name,
                   methodExpression.property.name
                 ];
 
                 if (
                   ["describe", "test", "it"]
-                    .difference(declaredNames)
-                    .includes(nameTokens[0]) &&
-                  (nameTokens[1] === "only" || nameTokens[1] === "skip") &&
-                  !declaredNames.includes(`${nameTokens[0]}.${nameTokens[1]}`)
+                    .difference(globalVariableNames)
+                    .includes(variableNameTokensToCall[0]) &&
+                  (variableNameTokensToCall[1] === "only" ||
+                    variableNameTokensToCall[1] === "skip") &&
+                  !globalVariableNames.includes(
+                    `${variableNameTokensToCall[0]}.${
+                      variableNameTokensToCall[1]
+                    }`
+                  )
                 ) {
                   // describe.only(name, fn);
                   path.remove();
                   continue;
                 } else if (
                   ["test", "it"]
-                    .difference(declaredNames)
-                    .includes(nameTokens[0]) &&
-                  nameTokens[1] === "todo" &&
-                  !declaredNames.includes(`${nameTokens[0]}.${nameTokens[1]}`)
+                    .difference(globalVariableNames)
+                    .includes(variableNameTokensToCall[0]) &&
+                  variableNameTokensToCall[1] === "todo" &&
+                  !globalVariableNames.includes(
+                    `${variableNameTokensToCall[0]}.${
+                      variableNameTokensToCall[1]
+                    }`
+                  )
                 ) {
                   // test.todo(name);
                   path.remove();
@@ -241,17 +250,21 @@ export default function(context: typeof babel): babel.PluginObj {
                 t.isIdentifier(methodExpression.object) &&
                 t.isIdentifier(methodExpression.property)
               ) {
-                const nameTokens = [
+                const variableNameTokensToCall = [
                   methodExpression.object.name,
                   methodExpression.property.name
                 ];
 
                 if (
                   ["describe", "test", "it"]
-                    .difference(declaredNames)
-                    .includes(nameTokens[0]) &&
-                  nameTokens[1] === "each" &&
-                  !declaredNames.includes(`${nameTokens[0]}.${nameTokens[1]}`)
+                    .difference(globalVariableNames)
+                    .includes(variableNameTokensToCall[0]) &&
+                  variableNameTokensToCall[1] === "each" &&
+                  !globalVariableNames.includes(
+                    `${variableNameTokensToCall[0]}.${
+                      variableNameTokensToCall[1]
+                    }`
+                  )
                 ) {
                   // describe.each(table)(name, fn, timeout);
                   path.remove();
@@ -271,17 +284,21 @@ export default function(context: typeof babel): babel.PluginObj {
                 t.isIdentifier(methodExpression.object) &&
                 t.isIdentifier(methodExpression.property)
               ) {
-                const nameTokens = [
+                const variableNameTokensToCall = [
                   methodExpression.object.name,
                   methodExpression.property.name
                 ];
 
                 if (
                   ["describe", "test", "it"]
-                    .difference(declaredNames)
-                    .includes(nameTokens[0]) &&
-                  nameTokens[1] === "each" &&
-                  !declaredNames.includes(`${nameTokens[0]}.${nameTokens[1]}`)
+                    .difference(globalVariableNames)
+                    .includes(variableNameTokensToCall[0]) &&
+                  variableNameTokensToCall[1] === "each" &&
+                  !globalVariableNames.includes(
+                    `${variableNameTokensToCall[0]}.${
+                      variableNameTokensToCall[1]
+                    }`
+                  )
                 ) {
                   // describe.each`table`(name, fn, timeout);
                   path.remove();
@@ -304,7 +321,7 @@ export default function(context: typeof babel): babel.PluginObj {
                 t.isIdentifier(methodExpression.object.property) &&
                 t.isIdentifier(methodExpression.property)
               ) {
-                const nameTokens = [
+                const variableNameTokensToCall = [
                   methodExpression.object.object.name,
                   methodExpression.object.property.name,
                   methodExpression.property.name
@@ -312,15 +329,20 @@ export default function(context: typeof babel): babel.PluginObj {
 
                 if (
                   ["describe", "test", "it"]
-                    .difference(declaredNames)
-                    .includes(nameTokens[0]) &&
-                  (nameTokens[1] === "only" || nameTokens[1] === "skip") &&
-                  !declaredNames.includes(
-                    `${nameTokens[0]}.${nameTokens[1]}`
+                    .difference(globalVariableNames)
+                    .includes(variableNameTokensToCall[0]) &&
+                  (variableNameTokensToCall[1] === "only" ||
+                    variableNameTokensToCall[1] === "skip") &&
+                  !globalVariableNames.includes(
+                    `${variableNameTokensToCall[0]}.${
+                      variableNameTokensToCall[1]
+                    }`
                   ) &&
-                  nameTokens[2] === "each" &&
-                  !declaredNames.includes(
-                    `${nameTokens[0]}.${nameTokens[1]}.${nameTokens[2]}`
+                  variableNameTokensToCall[2] === "each" &&
+                  !globalVariableNames.includes(
+                    `${variableNameTokensToCall[0]}.${
+                      variableNameTokensToCall[1]
+                    }.${variableNameTokensToCall[2]}`
                   )
                 ) {
                   // describe.only.each(table)(name, fn, timeout);
@@ -344,7 +366,7 @@ export default function(context: typeof babel): babel.PluginObj {
                 t.isIdentifier(methodExpression.object.property) &&
                 t.isIdentifier(methodExpression.property)
               ) {
-                const nameTokens = [
+                const variableNameTokensToCall = [
                   methodExpression.object.object.name,
                   methodExpression.object.property.name,
                   methodExpression.property.name
@@ -352,15 +374,20 @@ export default function(context: typeof babel): babel.PluginObj {
 
                 if (
                   ["describe", "test", "it"]
-                    .difference(declaredNames)
-                    .includes(nameTokens[0]) &&
-                  (nameTokens[1] === "only" || nameTokens[1] === "skip") &&
-                  !declaredNames.includes(
-                    `${nameTokens[0]}.${nameTokens[1]}`
+                    .difference(globalVariableNames)
+                    .includes(variableNameTokensToCall[0]) &&
+                  (variableNameTokensToCall[1] === "only" ||
+                    variableNameTokensToCall[1] === "skip") &&
+                  !globalVariableNames.includes(
+                    `${variableNameTokensToCall[0]}.${
+                      variableNameTokensToCall[1]
+                    }`
                   ) &&
-                  nameTokens[2] === "each" &&
-                  !declaredNames.includes(
-                    `${nameTokens[0]}.${nameTokens[1]}.${nameTokens[2]}`
+                  variableNameTokensToCall[2] === "each" &&
+                  !globalVariableNames.includes(
+                    `${variableNameTokensToCall[0]}.${
+                      variableNameTokensToCall[1]
+                    }.${variableNameTokensToCall[2]}`
                   )
                 ) {
                   // describe.only.each`table`(name, fn, timeout);
