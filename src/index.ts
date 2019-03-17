@@ -1,83 +1,121 @@
 // typings only
 import * as babel from "@babel/core";
 import { NodePath } from "@babel/traverse";
+import {
+  Expression,
+  ObjectProperty,
+  PatternLike,
+  RestElement,
+  VariableDeclarator
+  // @ts-ignore
+} from "@babel/types";
 
 // Jest globals
 // https://jestjs.io/docs/en/api
 
-// TODO: throws error if `describe` is overwritten or `it` is overwritten and used? `throw path.buildCodeFrameError("aaa?");` + path <= of "identifier"
-// TODO: ease restriction like removing `describe.foo` along with `describe.only`
+// TODO: test refactoring (by concat code blocks)
 // TODO: cares declared variable by nested destructuring
 // TODO: The Jest Object
 // TODO: magic comment
 // TODO: Test Framework Options ([Jest, Mocha, MagicComment])
+// TODO: `global`, `window`, `self`, `this`, etc...
 
-// TODO remove this
-declare global {
-  interface Array<T> {
-    difference(array: T[]): T[];
-  }
-}
-Array.prototype.difference = function(array) {
-  return this.filter(el => !array.includes(el));
-};
-
-function collectDeclaredNamesShallow(
+function collectDeclaredVariablesShallow(
   t: typeof babel.types,
-  paths: NodePath<any>[]
-): string[] {
-  const declaredNames = [];
+  paths: NodePath[]
+): Map<string, NodePath> {
+  const declaredNames = new Map();
   for (let path of paths) {
     if (t.isFunctionDeclaration(path.node)) {
       if (path.node.id !== null) {
         // function foo() { ??? }
-        declaredNames.push(path.node.id.name);
+        declaredNames.set(path.node.id.name, path.get("id"));
       }
       continue;
     }
     if (t.isVariableDeclaration(path.node)) {
-      for (let decl of path.node.declarations) {
-        if (t.isIdentifier(decl.id)) {
-          // const foo = ???;
-          declaredNames.push(decl.id.name);
-        } else if (t.isObjectPattern(decl.id)) {
-          for (let prop of decl.id.properties) {
-            if (t.isProperty(prop) && t.isIdentifier(prop.value)) {
-              // const { foo } = ???;
-              // const { foo: bar } = ???;
-              declaredNames.push(prop.value.name);
-            } else if (
-              t.isProperty(prop) &&
-              t.isAssignmentPattern(prop.value) &&
-              t.isIdentifier(prop.value.left)
-            ) {
-              // const { foo = 1 } = ???;
-              // const { foo: bar = 1 } = ???;
-              declaredNames.push(prop.value.left.name);
-            } else if (t.isRestElement(prop) && t.isIdentifier(prop.argument)) {
-              // const { ...foo } = ???;
-              declaredNames.push(prop.argument.name);
-            }
-          }
-        } else if (t.isArrayPattern(decl.id)) {
-          for (let elem of decl.id.elements) {
-            if (t.isIdentifier(elem)) {
-              // const [foo] = ???;
-              declaredNames.push(elem.name);
-            } else if (
-              t.isAssignmentPattern(elem) &&
-              t.isIdentifier(elem.left)
-            ) {
-              // const [foo = 1] = ???;
-              declaredNames.push(elem.left.name);
-            } else if (t.isRestElement(elem) && t.isIdentifier(elem.argument)) {
-              // const [...foo] = ???;
-              declaredNames.push(elem.argument.name);
-            }
+      path.node.declarations.forEach(
+        (decl: VariableDeclarator, declIndex: number) => {
+          if (t.isIdentifier(decl.id)) {
+            // const foo = ???;
+            declaredNames.set(
+              decl.id.name,
+              path.get(`declarations.${declIndex}`)
+            );
+          } else if (t.isObjectPattern(decl.id)) {
+            decl.id.properties.forEach(
+              (prop: RestElement | ObjectProperty, propIndex: number) => {
+                if (t.isProperty(prop) && t.isIdentifier(prop.value)) {
+                  // const { foo } = ???;
+                  // const { foo: bar } = ???;
+                  declaredNames.set(
+                    prop.value.name,
+                    path.get(
+                      `declarations.${declIndex}.id.properties.${propIndex}`
+                    )
+                  );
+                } else if (
+                  t.isProperty(prop) &&
+                  t.isAssignmentPattern(prop.value) &&
+                  t.isIdentifier(prop.value.left)
+                ) {
+                  // const { foo = 1 } = ???;
+                  // const { foo: bar = 1 } = ???;
+                  declaredNames.set(
+                    prop.value.left.name,
+                    path.get(
+                      `declarations.${declIndex}.id.properties.${propIndex}.value.left`
+                    )
+                  );
+                } else if (
+                  t.isRestElement(prop) &&
+                  t.isIdentifier(prop.argument)
+                ) {
+                  // const { ...foo } = ???;
+                  declaredNames.set(
+                    prop.argument.name,
+                    path.get(
+                      `declarations.${declIndex}.id.properties.${propIndex}.argument`
+                    )
+                  );
+                }
+              }
+            );
+          } else if (t.isArrayPattern(decl.id)) {
+            decl.id.elements.forEach((elem: PatternLike, elemIndex: number) => {
+              if (t.isIdentifier(elem)) {
+                // const [foo] = ???;
+                declaredNames.set(
+                  elem.name,
+                  path.get(`declarations.${declIndex}.id.elements.${elemIndex}`)
+                );
+              } else if (
+                t.isAssignmentPattern(elem) &&
+                t.isIdentifier(elem.left)
+              ) {
+                // const [foo = 1] = ???;
+                declaredNames.set(
+                  elem.left.name,
+                  path.get(
+                    `declarations.${declIndex}.id.elements.${elemIndex}.left`
+                  )
+                );
+              } else if (
+                t.isRestElement(elem) &&
+                t.isIdentifier(elem.argument)
+              ) {
+                // const [...foo] = ???;
+                declaredNames.set(
+                  elem.argument.name,
+                  path.get(
+                    `declarations.${declIndex}.id.elements.${elemIndex}.argument`
+                  )
+                );
+              }
+            });
           }
         }
-      }
-      continue;
+      );
     }
     if (
       t.isExpressionStatement(path.node) &&
@@ -86,58 +124,99 @@ function collectDeclaredNamesShallow(
       const assignExpression = path.node.expression;
       if (t.isIdentifier(assignExpression.left)) {
         // foo = ???;
-        declaredNames.push(assignExpression.left.name);
+        declaredNames.set(
+          assignExpression.left.name,
+          path.get(`expression.left`)
+        );
       } else if (t.isObjectPattern(assignExpression.left)) {
-        for (let prop of assignExpression.left.properties) {
-          if (t.isProperty(prop) && t.isIdentifier(prop.value)) {
-            // ({ foo } = ???);
-            // ({ foo: bar } = ???);
-            declaredNames.push(prop.value.name);
-          } else if (
-            t.isProperty(prop) &&
-            t.isAssignmentPattern(prop.value) &&
-            t.isIdentifier(prop.value.left)
-          ) {
-            // ({ foo = 1 } = ???);
-            // ({ foo: bar = 1 } = ???);
-            declaredNames.push(prop.value.left.name);
-          } else if (t.isRestElement(prop) && t.isIdentifier(prop.argument)) {
-            // ({ ...foo } = ???);
-            declaredNames.push(prop.argument.name);
+        assignExpression.left.properties.forEach(
+          (prop: RestElement | ObjectProperty, propIndex: number) => {
+            if (t.isProperty(prop) && t.isIdentifier(prop.value)) {
+              // ({ foo } = ???);
+              // ({ foo: bar } = ???);
+              declaredNames.set(
+                prop.value.name,
+                path.get(`expression.left.properties.${propIndex}.value`)
+              );
+            } else if (
+              t.isProperty(prop) &&
+              t.isAssignmentPattern(prop.value) &&
+              t.isIdentifier(prop.value.left)
+            ) {
+              // ({ foo = 1 } = ???);
+              // ({ foo: bar = 1 } = ???);
+              declaredNames.set(
+                prop.value.left.name,
+                path.get(`expression.left.properties.${propIndex}.value.left`)
+              );
+            } else if (t.isRestElement(prop) && t.isIdentifier(prop.argument)) {
+              // ({ ...foo } = ???);
+              declaredNames.set(
+                prop.argument.name,
+                path.get(`expression.left.properties.${propIndex}.argument`)
+              );
+            }
           }
-        }
+        );
       } else if (t.isArrayPattern(assignExpression.left)) {
-        for (let elem of assignExpression.left.elements) {
-          if (t.isIdentifier(elem)) {
-            // [foo] = ???;
-            declaredNames.push(elem.name);
-          } else if (t.isAssignmentPattern(elem) && t.isIdentifier(elem.left)) {
-            // [foo = 1] = ???;
-            declaredNames.push(elem.left.name);
-          } else if (t.isRestElement(elem) && t.isIdentifier(elem.argument)) {
-            // [...foo] = ???;
-            declaredNames.push(elem.argument.name);
+        assignExpression.left.elements.forEach(
+          (elem: PatternLike, elemIndex: number) => {
+            if (t.isIdentifier(elem)) {
+              // [foo] = ???;
+              declaredNames.set(
+                elem.name,
+                path.get(`expression.left.elements.${elemIndex}`)
+              );
+            } else if (
+              t.isAssignmentPattern(elem) &&
+              t.isIdentifier(elem.left)
+            ) {
+              // [foo = 1] = ???;
+              declaredNames.set(
+                elem.left.name,
+                path.get(`expression.left.elements.${elemIndex}.left`)
+              );
+            } else if (t.isRestElement(elem) && t.isIdentifier(elem.argument)) {
+              // [...foo] = ???;
+              declaredNames.set(
+                elem.argument.name,
+                path.get(`expression.left.elements.${elemIndex}.argument`)
+              );
+            }
+          }
+        );
+      } else if (t.isMemberExpression(assignExpression.left)) {
+        let member: Expression = assignExpression.left;
+
+        while (true) {
+          if (!("object" in member)) {
+            throw path.buildCodeFrameError(
+              "Not supported. Please report this to fix it."
+            );
+          } else if (t.isIdentifier(member.object)) {
+            // x
+            break;
+          } else if (t.isMemberExpression(member.object)) {
+            // x.foo
+            member = member.object;
+          } else if (t.isCallExpression(member.object)) {
+            // x()
+            member = member.object.callee;
+          } else if (t.isAssignmentPattern(member.object)) {
+            // (foo = x)
+            // TODO: (x = foo) pattern
+            member = member.object.right;
+          } else {
+            throw path.buildCodeFrameError(
+              "Not supported. Please report this to fix it."
+            );
           }
         }
-      } else if (t.isMemberExpression(assignExpression.left)) {
-        const member = assignExpression.left;
 
-        if (t.isIdentifier(member.object) && t.isIdentifier(member.property)) {
-          // foo.bar = ???;
-          declaredNames.push(`${member.object.name}.${member.property.name}`);
-        } else if (
-          t.isMemberExpression(member.object) &&
-          t.isIdentifier(member.object.object) &&
-          t.isIdentifier(member.object.property) &&
-          t.isIdentifier(member.property)
-        ) {
-          // foo.bar.buz = ???;
-          declaredNames.push(
-            `${member.object.object.name}.${member.object.property.name}.${
-              member.property.name
-            }`
-          );
-        }
+        declaredNames.set(
+          member.object.name,
+          path.get(`expression.left.object`)
+        );
       }
       continue;
     }
@@ -150,17 +229,14 @@ export default function(context: typeof babel): babel.PluginObj {
   const t = context.types;
   return {
     visitor: {
-      Program(programPath: NodePath<any>) {
+      Program(programPath: NodePath) {
         let globalPaths = programPath.get("body");
         if (!Array.isArray(globalPaths)) {
           globalPaths = [globalPaths];
         }
 
         // finding user's declaration
-        const globalVariableNames: string[] = collectDeclaredNamesShallow(
-          t,
-          globalPaths
-        );
+        const globalVariables = collectDeclaredVariablesShallow(t, globalPaths);
 
         // finding test code
         for (let path of globalPaths) {
@@ -172,7 +248,7 @@ export default function(context: typeof babel): babel.PluginObj {
               t.isCallExpression(expression) &&
               t.isIdentifier(expression.callee)
             ) {
-              const variableNameToCall = expression.callee.name;
+              const variableName = expression.callee.name;
               if (
                 [
                   "afterAll",
@@ -182,10 +258,15 @@ export default function(context: typeof babel): babel.PluginObj {
                   "describe",
                   "test",
                   "it"
-                ]
-                  .difference(globalVariableNames)
-                  .includes(variableNameToCall)
+                ].includes(variableName)
               ) {
+                const variablePath = globalVariables.get(variableName);
+                if (variablePath) {
+                  throw variablePath.buildCodeFrameError(
+                    `Try using "${variableName}" but "${variableName}" is re-declared illegally.`
+                  );
+                }
+
                 path.remove();
                 continue;
               }
@@ -201,38 +282,23 @@ export default function(context: typeof babel): babel.PluginObj {
                 t.isIdentifier(methodExpression.object) &&
                 t.isIdentifier(methodExpression.property)
               ) {
-                const variableNameTokensToCall = [
-                  methodExpression.object.name,
-                  methodExpression.property.name
-                ];
+                const objectName = methodExpression.object.name;
+                const propertyName = methodExpression.property.name;
 
                 if (
-                  ["describe", "test", "it"]
-                    .difference(globalVariableNames)
-                    .includes(variableNameTokensToCall[0]) &&
-                  (variableNameTokensToCall[1] === "only" ||
-                    variableNameTokensToCall[1] === "skip") &&
-                  !globalVariableNames.includes(
-                    `${variableNameTokensToCall[0]}.${
-                      variableNameTokensToCall[1]
-                    }`
-                  )
+                  (["describe", "test", "it"].includes(objectName) &&
+                    (propertyName === "only" || propertyName === "skip")) ||
+                  (["test", "it"].includes(objectName) &&
+                    propertyName === "todo")
                 ) {
                   // describe.only(name, fn);
-                  path.remove();
-                  continue;
-                } else if (
-                  ["test", "it"]
-                    .difference(globalVariableNames)
-                    .includes(variableNameTokensToCall[0]) &&
-                  variableNameTokensToCall[1] === "todo" &&
-                  !globalVariableNames.includes(
-                    `${variableNameTokensToCall[0]}.${
-                      variableNameTokensToCall[1]
-                    }`
-                  )
-                ) {
-                  // test.todo(name);
+                  const variablePath = globalVariables.get(objectName);
+                  if (variablePath) {
+                    throw variablePath.buildCodeFrameError(
+                      `Try using "${objectName}.${propertyName}" but "${objectName}" is re-declared illegally.`
+                    );
+                  }
+
                   path.remove();
                   continue;
                 }
@@ -250,23 +316,21 @@ export default function(context: typeof babel): babel.PluginObj {
                 t.isIdentifier(methodExpression.object) &&
                 t.isIdentifier(methodExpression.property)
               ) {
-                const variableNameTokensToCall = [
-                  methodExpression.object.name,
-                  methodExpression.property.name
-                ];
+                const objectName = methodExpression.object.name;
+                const propertyName = methodExpression.property.name;
 
                 if (
-                  ["describe", "test", "it"]
-                    .difference(globalVariableNames)
-                    .includes(variableNameTokensToCall[0]) &&
-                  variableNameTokensToCall[1] === "each" &&
-                  !globalVariableNames.includes(
-                    `${variableNameTokensToCall[0]}.${
-                      variableNameTokensToCall[1]
-                    }`
-                  )
+                  ["describe", "test", "it"].includes(objectName) &&
+                  propertyName === "each"
                 ) {
                   // describe.each(table)(name, fn, timeout);
+                  const variablePath = globalVariables.get(objectName);
+                  if (variablePath) {
+                    throw variablePath.buildCodeFrameError(
+                      `Try using "${objectName}.${propertyName}" but "${objectName}" is re-declared illegally.`
+                    );
+                  }
+
                   path.remove();
                   continue;
                 }
@@ -284,23 +348,21 @@ export default function(context: typeof babel): babel.PluginObj {
                 t.isIdentifier(methodExpression.object) &&
                 t.isIdentifier(methodExpression.property)
               ) {
-                const variableNameTokensToCall = [
-                  methodExpression.object.name,
-                  methodExpression.property.name
-                ];
+                const objectName = methodExpression.object.name;
+                const propertyName = methodExpression.property.name;
 
                 if (
-                  ["describe", "test", "it"]
-                    .difference(globalVariableNames)
-                    .includes(variableNameTokensToCall[0]) &&
-                  variableNameTokensToCall[1] === "each" &&
-                  !globalVariableNames.includes(
-                    `${variableNameTokensToCall[0]}.${
-                      variableNameTokensToCall[1]
-                    }`
-                  )
+                  ["describe", "test", "it"].includes(objectName) &&
+                  propertyName === "each"
                 ) {
                   // describe.each`table`(name, fn, timeout);
+                  const variablePath = globalVariables.get(objectName);
+                  if (variablePath) {
+                    throw variablePath.buildCodeFrameError(
+                      `Try using "${objectName}.${propertyName}" but "${objectName}" is re-declared illegally.`
+                    );
+                  }
+
                   path.remove();
                   continue;
                 }
@@ -321,31 +383,23 @@ export default function(context: typeof babel): babel.PluginObj {
                 t.isIdentifier(methodExpression.object.property) &&
                 t.isIdentifier(methodExpression.property)
               ) {
-                const variableNameTokensToCall = [
-                  methodExpression.object.object.name,
-                  methodExpression.object.property.name,
-                  methodExpression.property.name
-                ];
+                const objectName = methodExpression.object.object.name;
+                const propertyName = methodExpression.object.property.name;
+                const subPropertyName = methodExpression.property.name;
 
                 if (
-                  ["describe", "test", "it"]
-                    .difference(globalVariableNames)
-                    .includes(variableNameTokensToCall[0]) &&
-                  (variableNameTokensToCall[1] === "only" ||
-                    variableNameTokensToCall[1] === "skip") &&
-                  !globalVariableNames.includes(
-                    `${variableNameTokensToCall[0]}.${
-                      variableNameTokensToCall[1]
-                    }`
-                  ) &&
-                  variableNameTokensToCall[2] === "each" &&
-                  !globalVariableNames.includes(
-                    `${variableNameTokensToCall[0]}.${
-                      variableNameTokensToCall[1]
-                    }.${variableNameTokensToCall[2]}`
-                  )
+                  ["describe", "test", "it"].includes(objectName) &&
+                  (propertyName === "only" || propertyName === "skip") &&
+                  subPropertyName === "each"
                 ) {
                   // describe.only.each(table)(name, fn, timeout);
+                  const variablePath = globalVariables.get(objectName);
+                  if (variablePath) {
+                    throw variablePath.buildCodeFrameError(
+                      `Try using "${objectName}.${propertyName}.${subPropertyName}" but "${objectName}" is re-declared illegally.`
+                    );
+                  }
+
                   path.remove();
                   continue;
                 }
@@ -366,31 +420,23 @@ export default function(context: typeof babel): babel.PluginObj {
                 t.isIdentifier(methodExpression.object.property) &&
                 t.isIdentifier(methodExpression.property)
               ) {
-                const variableNameTokensToCall = [
-                  methodExpression.object.object.name,
-                  methodExpression.object.property.name,
-                  methodExpression.property.name
-                ];
+                const objectName = methodExpression.object.object.name;
+                const propertyName = methodExpression.object.property.name;
+                const subPropertyName = methodExpression.property.name;
 
                 if (
-                  ["describe", "test", "it"]
-                    .difference(globalVariableNames)
-                    .includes(variableNameTokensToCall[0]) &&
-                  (variableNameTokensToCall[1] === "only" ||
-                    variableNameTokensToCall[1] === "skip") &&
-                  !globalVariableNames.includes(
-                    `${variableNameTokensToCall[0]}.${
-                      variableNameTokensToCall[1]
-                    }`
-                  ) &&
-                  variableNameTokensToCall[2] === "each" &&
-                  !globalVariableNames.includes(
-                    `${variableNameTokensToCall[0]}.${
-                      variableNameTokensToCall[1]
-                    }.${variableNameTokensToCall[2]}`
-                  )
+                  ["describe", "test", "it"].includes(objectName) &&
+                  (propertyName === "only" || propertyName === "skip") &&
+                  subPropertyName === "each"
                 ) {
                   // describe.only.each`table`(name, fn, timeout);
+                  const variablePath = globalVariables.get(objectName);
+                  if (variablePath) {
+                    throw variablePath.buildCodeFrameError(
+                      `Try using "${objectName}.${propertyName}.${subPropertyName}" but "${objectName}" is re-declared illegally.`
+                    );
+                  }
+
                   path.remove();
                   continue;
                 }
