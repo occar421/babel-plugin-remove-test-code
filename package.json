@@ -8,7 +8,7 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "style": "eslint src/**",
+    "style": "eslint --ext .js,.ts src/**/*",
     "test": "jest"
   },
   "devDependencies": {
