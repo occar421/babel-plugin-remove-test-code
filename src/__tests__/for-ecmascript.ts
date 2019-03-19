@@ -90,7 +90,7 @@ ${error.message}`;
 
 type CodeFragment = string;
 
-function generateTestCode(fragments: CodeFragment[]) {
+function generateTestCode(fragments: CodeFragment[]): string {
   return fragments.join("\n");
 }
 

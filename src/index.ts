@@ -225,7 +225,7 @@ function collectDeclaredVariablesShallow(
 
 const supportedTargets = ["Jest"] as ["Jest"]; // as const
 
-type U<T extends any[]> = T[number]; // tuple -> union
+type U<T extends unknown[]> = T[number]; // tuple -> union
 
 function isValidOptions(
   options: object
@@ -235,7 +235,7 @@ function isValidOptions(
   // @ts-ignore
   if (options.targets) {
     // @ts-ignore
-    const targets: unknown = options.targets as any;
+    const targets = options.targets as unknown;
     if (!Array.isArray(targets) || targets.some(t => typeof t !== "string")) {
       throw new Error(`"targets" option should be an array of string.`);
     }
