@@ -13,11 +13,6 @@ import {
 // Jest globals
 // https://jestjs.io/docs/en/api
 
-// TODO: cares declared variable by nested destructuring
-// TODO: The Jest Object
-// TODO: magic comment
-// TODO: `global`, `window`, `self`, `this`, etc...
-
 function collectDeclaredVariablesShallow(
   t: typeof babel.types,
   paths: NodePath[]
