@@ -254,14 +254,13 @@ function isValidOptions(
 }
 
 export default function(
-  context: typeof babel,
+  { types: t }: typeof babel,
   options: object
 ): babel.PluginObj {
   if (!isValidOptions(options)) {
     throw new Error(`Something invalid options.`);
   }
 
-  const t = context.types;
   return {
     visitor: {
       Program(programPath: NodePath) {
