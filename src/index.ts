@@ -240,6 +240,10 @@ function isValidOptions(
       throw new Error(`"targets" option should be an array of string.`);
     }
 
+    if (targets.length <= 0) {
+      throw new Error(`"targets" should not be empty.`);
+    }
+
     for (const t of targets) {
       if (!supportedTargets.includes(t)) {
         throw new Error(`target option "${t}" is not supported.`);
