@@ -88,9 +88,57 @@ ${error.message}`;
   });
 });
 
+type CodeFragment = string;
+
+function generateTestCode(fragments: CodeFragment[]) {
+  return fragments.join("\n");
+}
+
+function consoleLog(): CodeFragment {
+  return `console.log("a");`;
+}
+
+function normalTestInvocation(identifierName: string): CodeFragment {
+  return `
+${identifierName}("b", () => {
+  it("c", () => {
+    expect("d").not.toBe("e");
+  });
+});`;
+}
+
+function eachTestInvocation(identifierName: string): CodeFragment {
+  return `
+${identifierName}([["a", "b"], ["c", "d"]])(
+  "%p and %p are different",
+  (arg, expected) => {
+    it(\`\${arg} !== \${expected}\`, () => {
+      expect(arg).not.toBe(expected);
+    });
+  }
+);`;
+}
+
+function eachTaggedTemplateTestInvocation(
+  identifierName: string
+): CodeFragment {
+  return `
+${identifierName}\`
+  arg     | expected
+  \${"a"} | \${"b"}
+  \${"c"} | \${"d"}
+\`("$arg and $expected are different", ({ arg, expected }) => {
+  it(\`\${arg} !== \${expected}\`, () => {
+    expect(arg).not.toBe(expected);
+  });
+});`;
+}
+
 describe("babel-plugin-remove-test-code for ecmascript", () => {
   it("transforms nothing if test code does not exists", () => {
-    expect(`console.log("a");`).toTransformInto(`console.log("a");`);
+    expect(generateTestCode([consoleLog()])).toTransformInto(
+      generateTestCode([consoleLog()])
+    );
   });
 
   describe("Jest", () => {
@@ -109,18 +157,9 @@ describe("babel-plugin-remove-test-code for ecmascript", () => {
       "it.only",
       "it.skip"
     ])("removes global `%s` invocation", funcName => {
-      expect(`
-console.log("a");
-
-${funcName}("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).toTransformInto(
-        `
-console.log("a");
-`
-      );
+      expect(
+        generateTestCode([consoleLog(), normalTestInvocation(funcName)])
+      ).toTransformInto(generateTestCode([consoleLog()]));
     });
 
     describe.each([
@@ -135,40 +174,18 @@ console.log("a");
       "it.skip.each"
     ])("removes global `%s` invocation", funcName => {
       it("by normal invocation", () => {
-        expect(`
-console.log("a");
-
-${funcName}([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).toTransformInto(
-          `
-console.log("a");
-`
-        );
+        expect(
+          generateTestCode([consoleLog(), eachTestInvocation(funcName)])
+        ).toTransformInto(generateTestCode([consoleLog()]));
       });
 
       it("by tagged template literal", () => {
-        expect(`
-console.log("a");
-
-${funcName}\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).toTransformInto(
-          `
-console.log("a");
-`
-        );
+        expect(
+          generateTestCode([
+            consoleLog(),
+            eachTaggedTemplateTestInvocation(funcName)
+          ])
+        ).toTransformInto(generateTestCode([consoleLog()]));
       });
     });
 
@@ -193,215 +210,169 @@ console.log("a");
         const baseName = funcName.split(".")[0];
 
         it(`by normal variable declaration \`${baseName}\``, () => {
-          expect(`
-console.log("a");
-
-const ${baseName} = (...args) => console.log(args);
-
-${funcName}("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).toThrowTransformError(
+          expect(
+            generateTestCode([
+              consoleLog(),
+              `const ${baseName} = (...args) => console.log(args);`,
+              normalTestInvocation(funcName)
+            ])
+          ).toThrowTransformError(
             `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
           );
         });
 
         it(`by destructuring variable declaration \`${baseName}\` by object pattern`, () => {
-          expect(`
-console.log("a");
-
-const { ${baseName} } = { ${baseName}(...args) { console.log(args); } };
-
-${funcName}("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).toThrowTransformError(
+          expect(
+            generateTestCode([
+              consoleLog(),
+              `const { ${baseName} } = { ${baseName}(...args) { console.log(args); } };`,
+              normalTestInvocation(funcName)
+            ])
+          ).toThrowTransformError(
             `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
           );
         });
 
         it(`by destructuring variable declaration \`${baseName}\` by array pattern`, () => {
-          expect(`
-console.log("a");
-
-const [${baseName}] = [(...args) => console.log(args)];
-
-${funcName}("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).toThrowTransformError(
+          expect(
+            generateTestCode([
+              consoleLog(),
+              `const [${baseName}] = [(...args) => console.log(args)];`,
+              normalTestInvocation(funcName)
+            ])
+          ).toThrowTransformError(
             `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
           );
         });
 
         it(`by destructuring variable rest element declaration \`${baseName}\` by object pattern`, () => {
-          expect(`
-console.log("a");
-
-const { ...${baseName} } = { foo(...args) { console.log(args); } };
-
-${funcName}("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).toThrowTransformError(
+          expect(
+            generateTestCode([
+              consoleLog(),
+              `const { ...${baseName} } = { foo(...args) { console.log(args); } };`,
+              normalTestInvocation(funcName)
+            ])
+          ).toThrowTransformError(
             `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
           );
         });
 
         it(`by destructuring variable rest element declaration \`${baseName}\` by array pattern`, () => {
-          expect(`
-console.log("a");
-
-const [...${baseName}] = [(args) => console.log(args)];
-
-${funcName}("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).toThrowTransformError(
+          expect(
+            generateTestCode([
+              consoleLog(),
+              `const [...${baseName}] = [(args) => console.log(args)];`,
+              normalTestInvocation(funcName)
+            ])
+          ).toThrowTransformError(
             `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
           );
         });
 
         it(`by variable assignment to \`${baseName}\``, () => {
-          expect(`
-console.log("a");
-
-${baseName} = (...args) => console.log(args);
-
-${funcName}("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).toThrowTransformError(
+          expect(
+            generateTestCode([
+              consoleLog(),
+              `${baseName} = (...args) => console.log(args);`,
+              normalTestInvocation(funcName)
+            ])
+          ).toThrowTransformError(
             `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
           );
         });
 
         it(`by variable assignment to \`${baseName}.foo\``, () => {
-          expect(`
-console.log("a");
-
-${baseName}.foo = (...args) => console.log(args);
-
-${funcName}("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).toThrowTransformError(
+          expect(
+            generateTestCode([
+              consoleLog(),
+              `${baseName}.foo = (...args) => console.log(args);`,
+              normalTestInvocation(funcName)
+            ])
+          ).toThrowTransformError(
             `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
           );
         });
 
         it(`by variable assignment to \`${baseName}.foo.bar\``, () => {
-          expect(`
-console.log("a");
-
-${baseName}.foo.bar = (...args) => console.log(args);
-
-${funcName}("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).toThrowTransformError(
+          expect(
+            generateTestCode([
+              consoleLog(),
+              `${baseName}.foo.bar = (...args) => console.log(args);`,
+              normalTestInvocation(funcName)
+            ])
+          ).toThrowTransformError(
             `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
           );
         });
 
         it(`by destructuring variable assignment to \`${baseName}\` by object pattern`, () => {
-          expect(`
-console.log("a");
-
-({ ${baseName} } = { ${baseName}(...args) { console.log(args); } });
-
-${funcName}("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).toThrowTransformError(
+          expect(
+            generateTestCode([
+              consoleLog(),
+              `({ ${baseName} } = { ${baseName}(...args) { console.log(args); } });`,
+              normalTestInvocation(funcName)
+            ])
+          ).toThrowTransformError(
             `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
           );
         });
 
         it(`by destructuring variable assignment to \`${baseName}\` by array pattern`, () => {
-          expect(`
-console.log("a");
-
-[${baseName}] = [(...args) => console.log(args)];
-
-${funcName}("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).toThrowTransformError(
+          expect(
+            generateTestCode([
+              consoleLog(),
+              `[${baseName}] = [(...args) => console.log(args)];`,
+              normalTestInvocation(funcName)
+            ])
+          ).toThrowTransformError(
             `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
           );
         });
 
         it(`by destructuring variable rest element assignment to \`${baseName}\` by object pattern`, () => {
-          expect(`
-console.log("a");
-
-({ ...${baseName} } = { foo(...args) { console.log(args); } });
-
-${funcName}("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).toThrowTransformError(
+          expect(
+            generateTestCode([
+              consoleLog(),
+              `({ ...${baseName} } = { foo(...args) { console.log(args); } });`,
+              normalTestInvocation(funcName)
+            ])
+          ).toThrowTransformError(
             `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
           );
         });
 
         it(`by destructuring variable rest element assignment to \`${baseName}\` by array pattern`, () => {
-          expect(`
-console.log("a");
-
-[...${baseName}] = [(...args) => console.log(args)];
-
-${funcName}("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).toThrowTransformError(
+          expect(
+            generateTestCode([
+              consoleLog(),
+              `[...${baseName}] = [(...args) => console.log(args)];`,
+              normalTestInvocation(funcName)
+            ])
+          ).toThrowTransformError(
             `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
           );
         });
 
         it(`by function declaration \`${baseName}\``, () => {
           // declaration before test line
-          expect(`
-console.log("a");
-
-function ${baseName}(...args) {
-  console.log(args);
-}
-
-${funcName}("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});`).toThrowTransformError(
+          expect(
+            generateTestCode([
+              consoleLog(),
+              `function ${baseName}(...args) { console.log(args); }`,
+              normalTestInvocation(funcName)
+            ])
+          ).toThrowTransformError(
             `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
           );
 
           // declaration after test line
-          expect(`
-console.log("a");
-
-${funcName}("b", () => {
-  it("c", () => {
-    expect("d").not.toBe("e");
-  });
-});
-
-function ${baseName}(...args) {
-  console.log(args);
-}`).toThrowTransformError(
+          expect(
+            generateTestCode([
+              consoleLog(),
+              normalTestInvocation(funcName),
+              `function ${baseName}(...args) { console.log(args); }`
+            ])
+          ).toThrowTransformError(
             `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
           );
         });
@@ -422,257 +393,169 @@ function ${baseName}(...args) {
 
         describe("by normal invocation", () => {
           it(`by normal variable declaration \`${baseName}\``, () => {
-            expect(`
-console.log("a");
-
-const ${baseName} = (...args) => console.log(args);
-
-${funcName}([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `const ${baseName} = (...args) => console.log(args);`,
+                eachTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by destructuring variable declaration \`${baseName}\` by object pattern`, () => {
-            expect(`
-console.log("a");
-
-const { ${baseName} } = { ${baseName}(...args) { console.log(args); } };
-
-${funcName}([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `const { ${baseName} } = { ${baseName}(...args) { console.log(args); } };`,
+                eachTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by destructuring variable declaration \`${baseName}\` by array pattern`, () => {
-            expect(`
-console.log("a");
-
-const [${baseName}] = [(...args) => console.log(args)];
-
-${funcName}([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `const [${baseName}] = [(...args) => console.log(args)];`,
+                eachTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by destructuring variable rest element declaration \`${baseName}\` by object pattern`, () => {
-            expect(`
-console.log("a");
-
-const { ...${baseName} } = { foo(...args) { console.log(args); } };
-
-${funcName}([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `const { ...${baseName} } = { foo(...args) { console.log(args); } };`,
+                eachTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by destructuring variable rest element declaration \`${baseName}\` by array pattern`, () => {
-            expect(`
-console.log("a");
-
-const [...${baseName}] = [(args) => console.log(args)];
-
-${funcName}([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `const [...${baseName}] = [(args) => console.log(args)];`,
+                eachTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by variable assignment to \`${baseName}\``, () => {
-            expect(`
-console.log("a");
-
-${baseName} = (...args) => console.log(args);
-
-${funcName}([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `${baseName} = (...args) => console.log(args);`,
+                eachTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by variable assignment to \`${baseName}.foo\``, () => {
-            expect(`
-console.log("a");
-
-${baseName}.foo = (...args) => console.log(args);
-
-${funcName}([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `${baseName}.foo = (...args) => console.log(args);`,
+                eachTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by variable assignment to \`${baseName}.foo.bar\``, () => {
-            expect(`
-console.log("a");
-
-${baseName}.foo.bar = (...args) => console.log(args);
-
-${funcName}([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `${baseName}.foo.bar = (...args) => console.log(args);`,
+                eachTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by destructuring variable assignment to \`${baseName}\` by object pattern`, () => {
-            expect(`
-console.log("a");
-
-({ ${baseName} } = { ${baseName}(...args) { console.log(args); } });
-
-${funcName}([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `({ ${baseName} } = { ${baseName}(...args) { console.log(args); } });`,
+                eachTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by destructuring variable assignment to \`${baseName}\` by array pattern`, () => {
-            expect(`
-console.log("a");
-
-[${baseName}] = [(...args) => console.log(args)];
-
-${funcName}([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `[${baseName}] = [(...args) => console.log(args)];`,
+                eachTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by destructuring variable rest element assignment to \`${baseName}\` by object pattern`, () => {
-            expect(`
-console.log("a");
-
-({ ...${baseName} } = { foo(...args) { console.log(args); } });
-
-${funcName}([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `({ ...${baseName} } = { foo(...args) { console.log(args); } });`,
+                eachTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by destructuring variable rest element assignment to \`${baseName}\` by array pattern`, () => {
-            expect(`
-console.log("a");
-
-[...${baseName}] = [(...args) => console.log(args)];
-
-${funcName}([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `[...${baseName}] = [(...args) => console.log(args)];`,
+                eachTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by function declaration \`${baseName}\``, () => {
             // declaration before test line
-            expect(`
-console.log("a");
-
-function ${baseName}(...args) {
-  console.log(args);
-}
-
-${funcName}([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `function ${baseName}(...args) { console.log(args); }`,
+                eachTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
 
             // declaration after test line
-            expect(`
-console.log("a");
-
-${funcName}([["a", "b"], ["c", "d"]])(
-  "%p and %p are different",
-  (arg, expected) => {
-    it(\`\${arg} !== \${expected}\`, () => {
-      expect(arg).not.toBe(expected);
-    });
-  }
-);
-
-function ${baseName}(...args) {
-  console.log(args);
-}`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                eachTestInvocation(funcName),
+                `function ${baseName}(...args) { console.log(args); }`
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
@@ -680,271 +563,169 @@ function ${baseName}(...args) {
 
         describe("by tagged template literal", () => {
           it(`by normal variable declaration \`${baseName}\``, () => {
-            expect(`
-console.log("a");
-
-const ${baseName} = (...args) => console.log(args);
-
-${funcName}\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `const ${baseName} = (...args) => console.log(args);`,
+                eachTaggedTemplateTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by destructuring variable declaration \`${baseName}\` by object pattern`, () => {
-            expect(`
-console.log("a");
-
-const { ${baseName} } = { ${baseName}(...args) { console.log(args); } };
-
-${funcName}\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `const { ${baseName} } = { ${baseName}(...args) { console.log(args); } };`,
+                eachTaggedTemplateTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by destructuring variable declaration \`${baseName}\` by array pattern`, () => {
-            expect(`
-console.log("a");
-
-const [${baseName}] = [(...args) => console.log(args)];
-
-${funcName}\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `const [${baseName}] = [(...args) => console.log(args)];`,
+                eachTaggedTemplateTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by destructuring variable rest element declaration \`${baseName}\` by object pattern`, () => {
-            expect(`
-console.log("a");
-
-const { ...${baseName} } = { foo(...args) { console.log(args); } };
-
-${funcName}\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `const { ...${baseName} } = { foo(...args) { console.log(args); } };`,
+                eachTaggedTemplateTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by destructuring variable rest element declaration \`${baseName}\` by array pattern`, () => {
-            expect(`
-console.log("a");
-
-const [...${baseName}] = [(args) => console.log(args)];
-
-${funcName}\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `const [...${baseName}] = [(args) => console.log(args)];`,
+                eachTaggedTemplateTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by variable assignment to \`${baseName}\``, () => {
-            expect(`
-console.log("a");
-
-${baseName} = (...args) => console.log(args);
-
-${funcName}\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `${baseName} = (...args) => console.log(args);`,
+                eachTaggedTemplateTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by variable assignment to \`${baseName}.foo\``, () => {
-            expect(`
-console.log("a");
-
-${baseName}.foo = (...args) => console.log(args);
-
-${funcName}\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `${baseName}.foo = (...args) => console.log(args);`,
+                eachTaggedTemplateTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by variable assignment to \`${baseName}.foo.bar\``, () => {
-            expect(`
-console.log("a");
-
-${baseName}.foo.bar = (...args) => console.log(args);
-
-${funcName}\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `${baseName}.foo.bar = (...args) => console.log(args);`,
+                eachTaggedTemplateTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by destructuring variable assignment to \`${baseName}\` by object pattern`, () => {
-            expect(`
-console.log("a");
-
-({ ${baseName} } = { ${baseName}(...args) { console.log(args); } });
-
-${funcName}\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `({ ${baseName} } = { ${baseName}(...args) { console.log(args); } });`,
+                eachTaggedTemplateTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by destructuring variable assignment to \`${baseName}\` by array pattern`, () => {
-            expect(`
-console.log("a");
-
-[${baseName}] = [(...args) => console.log(args)];
-
-${funcName}\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `[${baseName}] = [(...args) => console.log(args)];`,
+                eachTaggedTemplateTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by destructuring variable rest element assignment to \`${baseName}\` by object pattern`, () => {
-            expect(`
-console.log("a");
-
-({ ...${baseName} } = { foo(...args) { console.log(args); } });
-
-${funcName}\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `({ ...${baseName} } = { foo(...args) { console.log(args); } });`,
+                eachTaggedTemplateTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by destructuring variable rest element assignment to \`${baseName}\` by array pattern`, () => {
-            expect(`
-console.log("a");
-
-[...${baseName}] = [(...args) => console.log(args)];
-
-${funcName}\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `[...${baseName}] = [(...args) => console.log(args)];`,
+                eachTaggedTemplateTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });
 
           it(`by function declaration \`${baseName}\``, () => {
             // declaration before test line
-            expect(`
-console.log("a");
-
-function ${baseName}(...args) {
-  console.log(args);
-}
-
-${funcName}\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                `function ${baseName}(...args) { console.log(args); }`,
+                eachTaggedTemplateTestInvocation(funcName)
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
 
             // declaration after test line
-            expect(`
-console.log("a");
-
-${funcName}\`
-  arg    | expected
-  \${"a"} | \${"b"}
-  \${"c"} | \${"d"}
-\`("$arg and $expected are different", ({ arg, expected }) => {
-  it(\`\${arg} !== \${expected}\`, () => {
-    expect(arg).not.toBe(expected);
-  });
-});
-
-function ${baseName}(...args) {
-  console.log(args);
-}`).toThrowTransformError(
+            expect(
+              generateTestCode([
+                consoleLog(),
+                eachTaggedTemplateTestInvocation(funcName),
+                `function ${baseName}(...args) { console.log(args); }`
+              ])
+            ).toThrowTransformError(
               `Try using "${funcName}" but "${baseName}" is re-declared illegally.`
             );
           });

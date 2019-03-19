@@ -13,7 +13,6 @@ import {
 // Jest globals
 // https://jestjs.io/docs/en/api
 
-// TODO: test refactoring (by concat code blocks)
 // TODO: cares declared variable by nested destructuring
 // TODO: The Jest Object
 // TODO: magic comment
