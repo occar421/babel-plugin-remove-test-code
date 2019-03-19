@@ -16,7 +16,6 @@ import {
 // TODO: cares declared variable by nested destructuring
 // TODO: The Jest Object
 // TODO: magic comment
-// TODO: Test Framework Options ([Jest, Mocha, MagicComment])
 // TODO: `global`, `window`, `self`, `this`, etc...
 
 function collectDeclaredVariablesShallow(
@@ -224,7 +223,44 @@ function collectDeclaredVariablesShallow(
   return declaredNames;
 }
 
-export default function(context: typeof babel): babel.PluginObj {
+const supportedTargets = ["Jest"] as ["Jest"]; // as const
+
+type U<T extends any[]> = T[number]; // tuple -> union
+
+function isValidOptions(
+  options: object
+): options is {
+  targets?: U<typeof supportedTargets>[];
+} {
+  // @ts-ignore
+  if (options.targets) {
+    // @ts-ignore
+    const targets: unknown = options.targets as any;
+    if (!Array.isArray(targets) || targets.some(t => typeof t !== "string")) {
+      throw new Error(`"targets" option should be an array of string.`);
+    }
+
+    for (const t of targets) {
+      if (!supportedTargets.includes(t)) {
+        throw new Error(`target option "${t}" is not supported.`);
+      }
+    }
+
+    return true;
+  } else {
+    // TODO default option
+    return false;
+  }
+}
+
+export default function(
+  context: typeof babel,
+  options: object
+): babel.PluginObj {
+  if (!isValidOptions(options)) {
+    throw new Error(`Something invalid options.`);
+  }
+
   const t = context.types;
   return {
     visitor: {

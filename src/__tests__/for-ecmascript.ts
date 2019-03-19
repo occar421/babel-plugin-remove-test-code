@@ -22,7 +22,7 @@ beforeAll(() => {
       compare(input: string, expected: string): jasmine.CustomMatcherResult {
         const parser = "babel";
         const result = babel.transform(input, {
-          plugins: [removeTestCodePlugin],
+          plugins: [[removeTestCodePlugin, { targets: ["Jest"] }]],
           babelrc: false
         });
         if (!result || !result.code) {
@@ -52,7 +52,7 @@ ${normalizedActualCode}`;
         try {
           const parser = "babel";
           const result = babel.transform(input, {
-            plugins: [removeTestCodePlugin],
+            plugins: [[removeTestCodePlugin, { targets: ["Jest"] }]],
             babelrc: false
           });
           if (!result || !result.code) {
