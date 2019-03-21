@@ -44,11 +44,11 @@ When you use Jest as a test framework,
 
 ## TODO
 
-* [ ] magic comments to remove or not to remove
-* [ ] cares declared variable by nested destructuring
-* [ ] (Jest) the Jest Object
-* [ ] default options
-* [ ] cares global objects (`global`, `window`, `self`, `this`, etc...)
+- [ ] magic comments to remove or not to remove
+- [ ] cares declared variable by nested destructuring
+- [ ] (Jest) the Jest Object & mockFn
+- [ ] default options
+- [ ] cares global objects (`global`, `window`, `self`, `this`, etc...)
 
 ## License
 
