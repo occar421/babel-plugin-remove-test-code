@@ -1,6 +1,6 @@
 import { prelude, generateTestCode, fragments } from "../test-utils";
 
-beforeAll(prelude);
+beforeAll(prelude(["Jest"]));
 
 describe("babel-plugin-remove-test-code for es & Jest", () => {
   it.each([

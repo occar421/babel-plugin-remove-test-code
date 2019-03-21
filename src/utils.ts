@@ -213,7 +213,7 @@ export function collectDeclaredVariablesShallow(
   return declaredNames;
 }
 
-const supportedTargets = ["Jest"] as ["Jest"]; // as const
+const supportedTargets = ["Jest", "MagicComment"] as ["Jest", "MagicComment"]; // as const
 
 type U<T extends unknown[]> = T[number]; // tuple -> union
 

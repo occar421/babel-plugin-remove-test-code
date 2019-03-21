@@ -30,7 +30,7 @@ while (1) {
 }
 ```
 
-Currently, this supports Jest.
+Currently, this supports MagicComment (default) and Jest.
 
 ## Configuration
 
@@ -47,7 +47,6 @@ When you use Jest as a test framework,
 - [ ] magic comments to remove or not to remove
 - [ ] cares declared variable by nested destructuring
 - [ ] (Jest) the Jest Object & mockFn
-- [ ] default options
 - [ ] cares global objects (`global`, `window`, `self`, `this`, etc...)
 
 ## License

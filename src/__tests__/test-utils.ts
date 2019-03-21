@@ -1,6 +1,7 @@
 import * as babel from "@babel/core";
 import removeTestCodePlugin from "../index";
 import prettier from "prettier";
+import { Target } from "../utils";
 
 function normalize(code: string, parser: "babel"): string {
   return prettier.format(code, { parser }).replace(/\n+/g, "\n");
@@ -16,43 +17,14 @@ declare global {
   }
 }
 
-export function prelude() {
-  jasmine.addMatchers({
-    toTransformInto: () => ({
-      compare(input: string, expected: string): jasmine.CustomMatcherResult {
-        const parser = "babel";
-        const result = babel.transform(input, {
-          plugins: [[removeTestCodePlugin, { targets: ["Jest"] }]],
-          babelrc: false
-        });
-        if (!result || !result.code) {
-          throw new Error("Failed to transform code.");
-        }
-        const actual = result.code;
-        const normalizedActualCode = normalize(actual, parser);
-        const normalizedExpectedCode = normalize(expected, parser);
-        const pass = normalizedActualCode === normalizedExpectedCode;
-        return {
-          pass,
-          message() {
-            return `Expected input to transform into:
-${normalizedExpectedCode}
---------------------------------
-Instead, got:
-${normalizedActualCode}`;
-          }
-        };
-      }
-    }),
-    toThrowTransformError: () => ({
-      compare(
-        input: string,
-        expectedError: string
-      ): jasmine.CustomMatcherResult {
-        try {
+export function prelude(targets: Target[]) {
+  return () =>
+    jasmine.addMatchers({
+      toTransformInto: () => ({
+        compare(input: string, expected: string): jasmine.CustomMatcherResult {
           const parser = "babel";
           const result = babel.transform(input, {
-            plugins: [[removeTestCodePlugin, { targets: ["Jest"] }]],
+            plugins: [[removeTestCodePlugin, { targets }]],
             babelrc: false
           });
           if (!result || !result.code) {
@@ -60,32 +32,62 @@ ${normalizedActualCode}`;
           }
           const actual = result.code;
           const normalizedActualCode = normalize(actual, parser);
+          const normalizedExpectedCode = normalize(expected, parser);
+          const pass = normalizedActualCode === normalizedExpectedCode;
           return {
-            pass: false,
+            pass,
             message() {
-              return `Expected transform to throw:
+              return `Expected input to transform into:
+${normalizedExpectedCode}
+--------------------------------
+Instead, got:
+${normalizedActualCode}`;
+            }
+          };
+        }
+      }),
+      toThrowTransformError: () => ({
+        compare(
+          input: string,
+          expectedError: string
+        ): jasmine.CustomMatcherResult {
+          try {
+            const parser = "babel";
+            const result = babel.transform(input, {
+              plugins: [[removeTestCodePlugin, { targets }]],
+              babelrc: false
+            });
+            if (!result || !result.code) {
+              throw new Error("Failed to transform code.");
+            }
+            const actual = result.code;
+            const normalizedActualCode = normalize(actual, parser);
+            return {
+              pass: false,
+              message() {
+                return `Expected transform to throw:
 ${expectedError}
 --------------------------------
 Instead, got normal output:
 ${normalizedActualCode}`;
-            }
-          };
-        } catch (error) {
-          return {
-            pass:
-              error instanceof SyntaxError &&
-              error.message.includes(expectedError),
-            message() {
-              return `Expected:
+              }
+            };
+          } catch (error) {
+            return {
+              pass:
+                error instanceof SyntaxError &&
+                error.message.includes(expectedError),
+              message() {
+                return `Expected:
 ${expectedError}
 but got:
 ${error.message}`;
-            }
-          };
+              }
+            };
+          }
         }
-      }
-    })
-  });
+      })
+    });
 }
 
 type CodeFragment = string;
