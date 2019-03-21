@@ -17,7 +17,7 @@ declare global {
   }
 }
 
-export function prelude(targets: Target[]) {
+export function prelude(targets: Target[]): () => void {
   return () =>
     jasmine.addMatchers({
       toTransformInto: () => ({
@@ -96,7 +96,9 @@ export function generateTestCode(fragments: CodeFragment[]): string {
   return fragments.join("\n");
 }
 
-export const fragments: { [key: string]: (...args: any) => CodeFragment } = {
+export const fragments: {
+  [key: string]: (...args: string[]) => CodeFragment;
+} = {
   consoleLog: () => `console.log("a");`,
   normalTestInvocation: identifierName => `
 ${identifierName}("b", () => {
