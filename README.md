@@ -2,6 +2,8 @@
 
 Babel plugin that remove test codes from the file
 
+(Currently, Jest )
+
 ## Usage
 
 You can write a unit-test in the same file. This Babel plugin removes all test code not to bundle it into the production build.
