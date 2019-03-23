@@ -246,6 +246,6 @@ export function isValidOptions(
     return true;
   } else {
     // use default options
-    return false;
+    return true;
   }
 }
