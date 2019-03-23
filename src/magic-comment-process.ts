@@ -21,10 +21,10 @@ import { Comment, BaseNode, File } from "@babel/types";
 // (~~ is optional string)
 // If "end" does not appear after "start", this process removes all lines after "start"
 
-type Range = {
+interface Range {
   start: { number: number; comment: Comment };
   end: { number: number; comment?: Comment };
-};
+}
 
 function collectRangesToRemove(
   programPath: NodePath,
@@ -93,7 +93,6 @@ export default function(t: typeof babel.types, programPath: NodePath): void {
           return;
         }
       }
-      // TODO skip children if out of range ?
     },
     exit(path: NodePath<BaseNode>) {
       // remove all magic comments
