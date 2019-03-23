@@ -45,12 +45,17 @@ When you use Jest as a test framework,
 ## TODO
 
 - [x] magic comments to remove or not to remove
-- [ ] remove comments by this.getSibling(current - 1 or + 1)
-- [ ] binging API instead of manual variable declaration search
 - [ ] cares declared variable by nested destructuring
 - [ ] (Jest) the Jest Object & mockFn
 - [ ] Examples
 - [ ] cares global objects (`global`, `window`, `self`, `this`, etc...)
+
+## Notes
+
+* binging API instead of manual variable declaration search  
+  (not possible for assignment of global can't be detected)
+* skip children if out of range  
+  (not possible due to `enter` `exit`)
 
 ## License
 
