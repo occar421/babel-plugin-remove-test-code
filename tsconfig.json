@@ -4,6 +4,7 @@
     "strict": true,
     "skipLibCheck": true,
     "target": "es2016",
+    "module": "commonjs",
     "outDir": "./dist"
   },
   "include": ["src/**/*"],
