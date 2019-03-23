@@ -1,8 +1,10 @@
 # babel-plugin-remove-test-code
 
-Babel plugin that remove test codes from the file
+Babel plugin that remove test codes from the file.
 
-(Currently, Jest )
+See an example at "examples" how the code looks like. ("examples/react-app/src/components/counter.jsx")
+
+(Currently, Jest runs the same tests because they are listed directly and indirectly with `import` statement.)
 
 ## Usage
 
@@ -54,9 +56,9 @@ When you use Jest as a test framework,
 
 ## Notes
 
-* binging API instead of manual variable declaration search  
+- binging API instead of manual variable declaration search  
   (not possible for assignment of global can't be detected)
-* skip children if out of range  
+- skip children if out of range  
   (not possible due to `enter` `exit`)
 
 ## License
