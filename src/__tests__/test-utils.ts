@@ -96,17 +96,15 @@ export function generateTestCode(fragments: CodeFragment[]): string {
   return fragments.join("\n");
 }
 
-export const fragments: {
-  [key: string]: (...args: string[]) => CodeFragment;
-} = {
-  consoleLog: () => `console.log("a");`,
-  normalTestInvocation: identifierName => `
+export const fragments = {
+  consoleLog: (content: string = "foo") => `console.log("${content}");`,
+  normalTestInvocation: (identifierName: string) => `
 ${identifierName}("b", () => {
   it("c", () => {
     expect("d").not.toBe("e");
   });
 });`,
-  eachTestInvocation: identifierName => `
+  eachTestInvocation: (identifierName: string) => `
 ${identifierName}([["a", "b"], ["c", "d"]])(
   "%p and %p are different",
   (arg, expected) => {
@@ -115,7 +113,7 @@ ${identifierName}([["a", "b"], ["c", "d"]])(
     });
   }
 );`,
-  eachTaggedTemplateTestInvocation: identifierName => `
+  eachTaggedTemplateTestInvocation: (identifierName: string) => `
 ${identifierName}\`
   arg     | expected
   \${"a"} | \${"b"}

@@ -44,9 +44,12 @@ When you use Jest as a test framework,
 
 ## TODO
 
-- [ ] magic comments to remove or not to remove
+- [x] magic comments to remove or not to remove
+- [ ] remove comments by this.getSibling(current - 1 or + 1)
+- [ ] binging API instead of manual variable declaration search
 - [ ] cares declared variable by nested destructuring
 - [ ] (Jest) the Jest Object & mockFn
+- [ ] Examples
 - [ ] cares global objects (`global`, `window`, `self`, `this`, etc...)
 
 ## License
