@@ -6,7 +6,6 @@ import {
   PatternLike,
   RestElement,
   VariableDeclarator
-  // @ts-ignore
 } from "@babel/types";
 
 export function collectDeclaredVariablesShallow(

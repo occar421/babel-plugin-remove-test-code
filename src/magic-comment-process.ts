@@ -1,6 +1,5 @@
 import { NodePath } from "@babel/traverse";
 import * as babel from "@babel/core";
-// @ts-ignore
 import { Comment, BaseNode, File } from "@babel/types";
 
 // Original Syntax
