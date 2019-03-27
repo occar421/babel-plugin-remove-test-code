@@ -41,6 +41,7 @@ function collectRangesToRemove(
       }
     } else if (comment.value.includes("test-code-end")) {
       if (!isInRange) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         throw (programPath.hub as any).buildError(
           comment,
           "Invalid 'test-code-end' comment. 'test-code-start' should comes before 'test-code-end'."
