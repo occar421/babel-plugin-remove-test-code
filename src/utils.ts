@@ -213,9 +213,9 @@ export function collectDeclaredVariablesShallow(
   return declaredNames;
 }
 
-const supportedTargets = ["Jest", "MagicComment"] as ["Jest", "MagicComment"]; // as const
+const supportedTargets = ["Jest", "MagicComment"] as const;
 
-type U<T extends unknown[]> = T[number]; // tuple -> union
+type U<T extends ReadonlyArray<unknown>> = T[number]; // tuple -> union
 
 export type Target = U<typeof supportedTargets>;
 

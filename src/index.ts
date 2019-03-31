@@ -21,9 +21,7 @@ export default function(
     throw new Error(`Something invalid options.`);
   }
 
-  const targets = new Set(
-    options.targets || (["MagicComment"] as ["MagicComment"]) // as const
-  );
+  const targets = new Set(options.targets || (["MagicComment"] as const));
 
   return {
     visitor: {
